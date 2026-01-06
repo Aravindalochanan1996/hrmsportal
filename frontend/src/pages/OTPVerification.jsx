@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './OTPVerification.css';
 
-const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = false, onSuccess, onCancel }) => {
+const OTPVerification = ({ phoneNumber: initialPhoneNumber, countryCode: initialCountryCode, isProfileUpdate = false, onSuccess, onCancel }) => {
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber || '');
+  const [countryCode, setCountryCode] = useState(initialCountryCode || '+1');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState(initialPhoneNumber ? 'otp' : 'phone'); // 'phone' or 'otp'
   const [loading, setLoading] = useState(false);
@@ -25,12 +26,15 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
       return;
     }
 
+    // Combine country code and phone number
+    const fullPhoneNumber = countryCode + ' ' + phoneNumber;
+
     setLoading(true);
     try {
       const response = await fetch('/api/otp/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber })
+        body: JSON.stringify({ phoneNumber: fullPhoneNumber })
       });
 
       const data = await response.json();
@@ -39,7 +43,7 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
         throw new Error(data.message || 'Failed to send OTP');
       }
 
-      setSuccess(`OTP sent to ${data.phoneNumber}. Check your phone.`);
+      setSuccess(`OTP sent to ${fullPhoneNumber}. Check your phone.`);
       setStep('otp');
     } catch (err) {
       setError(err.message || 'Failed to send OTP');
@@ -66,6 +70,8 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
 
     setLoading(true);
     try {
+      // Combine country code and phone number
+      const fullPhoneNumber = countryCode + ' ' + phoneNumber;
       const token = localStorage.getItem('token');
       const endpoint = user ? '/api/otp/verify-and-update' : '/api/otp/verify';
       const headers = {
@@ -79,7 +85,7 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
       const response = await fetch(endpoint, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ phoneNumber, otp })
+        body: JSON.stringify({ phoneNumber: fullPhoneNumber, otp })
       });
 
       const data = await response.json();
@@ -115,11 +121,14 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
     setOtp('');
     setLoading(true);
 
+    // Combine country code and phone number
+    const fullPhoneNumber = countryCode + ' ' + phoneNumber;
+
     try {
       const response = await fetch('/api/otp/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber })
+        body: JSON.stringify({ phoneNumber: fullPhoneNumber })
       });
 
       const data = await response.json();
@@ -151,17 +160,31 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
         {step === 'phone' ? (
           <form onSubmit={handleRequestOTP} className="otp-form">
             <div className="form-group">
+              <label htmlFor="countryCode">Country Code</label>
+              <input
+                id="countryCode"
+                type="text"
+                placeholder="+1"
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                disabled={loading}
+                maxLength="5"
+                required
+              />
+              <small>Enter country code (e.g., +1, +44, +91)</small>
+            </div>
+            <div className="form-group">
               <label htmlFor="phone">Phone Number</label>
               <input
                 id="phone"
                 type="tel"
-                placeholder="+1 (555) 123-4567"
+                placeholder="(555) 123-4567"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 disabled={loading}
                 required
               />
-              <small>Enter your phone number with country code</small>
+              <small>Enter your phone number without country code</small>
             </div>
 
             <button 
@@ -186,7 +209,7 @@ const OTPVerification = ({ phoneNumber: initialPhoneNumber, isProfileUpdate = fa
                 maxLength="6"
                 required
               />
-              <small>A 6-digit code was sent to {phoneNumber}</small>
+              <small>A 6-digit code was sent to {countryCode} {phoneNumber}</small>
             </div>
 
             <div className="otp-info">

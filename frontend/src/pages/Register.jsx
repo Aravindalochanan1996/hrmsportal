@@ -130,7 +130,8 @@ const Register = () => {
         lastName: registrationData.lastName,
         email: registrationData.email,
         password: registrationData.password,
-        phone: phoneNumber
+        phone: phoneNumber,
+        phoneVerified: true
       });
 
       // Login user

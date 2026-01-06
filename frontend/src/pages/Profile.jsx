@@ -82,7 +82,8 @@ const Profile = () => {
       // Store pending data and show OTP verification
       setPendingPhoneData({
         ...formData,
-        phone: newPhone
+        phone: newPhone,
+        countryCode: formData.countryCode
       });
       setShowOTPVerification(true);
       return;
@@ -125,7 +126,8 @@ const Profile = () => {
     return (
       <div className="profile-otp-wrapper">
         <OTPVerification 
-          phoneNumber={pendingPhoneData.phone.split(' ')[1]} 
+          phoneNumber={pendingPhoneData.phone} 
+          countryCode={pendingPhoneData.countryCode}
           isProfileUpdate={true}
           onSuccess={handleOTPVerificationSuccess}
           onCancel={() => {
@@ -173,7 +175,14 @@ const Profile = () => {
 
           <div className="form-row">
             <div className="form-group full-width">
-              <label htmlFor="phone">Phone</label>
+              <label htmlFor="phone">
+                Phone
+                {originalPhone && (
+                  <span className={`phone-status ${user?.phoneVerified ? 'verified' : 'pending'}`}>
+                    {user?.phoneVerified ? '✓ Verified' : '⏳ Awaiting Verification'}
+                  </span>
+                )}
+              </label>
               <div className="phone-input-group">
                 <div className="country-code-wrapper">
                   <select
