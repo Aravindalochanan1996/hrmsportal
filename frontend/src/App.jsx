@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import Attendance from './pages/Attendance';
+import OTPVerification from './pages/OTPVerification';
 import Navbar from './components/Navbar';
 
 const ProtectedRoute = ({ children }) => {
@@ -28,6 +29,7 @@ function AppContent() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/verify-otp" element={<OTPVerification />} />
         <Route
           path="/dashboard"
           element={

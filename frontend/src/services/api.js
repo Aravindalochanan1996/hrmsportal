@@ -43,4 +43,11 @@ export const attendanceService = {
   getHistory: (month, year) => api.get(`/attendance/history?month=${month}&year=${year}`)
 };
 
+// OTP Services
+export const otpService = {
+  requestOTP: (phoneNumber) => api.post('/otp/request', { phoneNumber }),
+  verifyOTP: (phoneNumber, otp) => api.post('/otp/verify', { phoneNumber, otp }),
+  verifyOTPAndUpdate: (phoneNumber, otp) => api.post('/otp/verify-and-update', { phoneNumber, otp })
+};
+
 export default api;

@@ -4,6 +4,13 @@
   padding: 2rem 1rem;
 }
 
+.profile-otp-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .profile-card {
   background: white;
   border-radius: 0.75rem;

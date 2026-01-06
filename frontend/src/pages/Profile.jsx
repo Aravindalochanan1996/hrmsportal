@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userService } from '../services/api';
 import { countryCodes } from '../utils/countryCodes';
+import OTPVerification from './OTPVerification';
 import './Profile.css';
 
 const Profile = () => {
@@ -22,6 +23,9 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showOTPVerification, setShowOTPVerification] = useState(false);
+  const [pendingPhoneData, setPendingPhoneData] = useState(null);
+  const [originalPhone, setOriginalPhone] = useState('');
 
   useEffect(() => {
     fetchProfile();
@@ -31,6 +35,8 @@ const Profile = () => {
     try {
       const response = await userService.getProfile();
       const phoneData = response.data.phone ? response.data.phone.split(' ') : ['', ''];
+      const currentPhone = response.data.phone || '';
+      setOriginalPhone(currentPhone);
       setFormData({
         firstName: response.data.firstName,
         lastName: response.data.lastName,
@@ -59,17 +65,42 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSaving(true);
     setError('');
     setSuccess('');
 
-    try {
-      const submitData = {
+    const newPhone = formData.countryCode + ' ' + formData.phone;
+    const phoneChanged = newPhone !== originalPhone;
+    const phoneAdded = newPhone.trim() !== '' && originalPhone.trim() === '';
+
+    // If phone is added or changed, require OTP verification
+    if (phoneAdded || phoneChanged) {
+      if (!formData.phone.trim()) {
+        setError('Please enter a phone number');
+        return;
+      }
+      
+      // Store pending data and show OTP verification
+      setPendingPhoneData({
         ...formData,
-        phone: formData.countryCode + ' ' + formData.phone
-      };
-      const response = await userService.updateProfile(submitData);
+        phone: newPhone
+      });
+      setShowOTPVerification(true);
+      return;
+    }
+
+    // If phone didn't change, proceed with normal update
+    await updateProfile({
+      ...formData,
+      phone: newPhone
+    });
+  };
+
+  const updateProfile = async (updateData) => {
+    setSaving(true);
+    try {
+      const response = await userService.updateProfile(updateData);
       updateUser(response.data.user);
+      setOriginalPhone(updateData.phone);
       setSuccess('Profile updated successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
@@ -79,8 +110,31 @@ const Profile = () => {
     }
   };
 
+  const handleOTPVerificationSuccess = async () => {
+    // OTP verification successful, now update profile
+    setShowOTPVerification(false);
+    await updateProfile(pendingPhoneData);
+    setPendingPhoneData(null);
+  };
+
   if (loading) {
     return <div className="loading">Loading profile...</div>;
+  }
+
+  if (showOTPVerification && pendingPhoneData) {
+    return (
+      <div className="profile-otp-wrapper">
+        <OTPVerification 
+          phoneNumber={pendingPhoneData.phone.split(' ')[1]} 
+          isProfileUpdate={true}
+          onSuccess={handleOTPVerificationSuccess}
+          onCancel={() => {
+            setShowOTPVerification(false);
+            setPendingPhoneData(null);
+          }}
+        />
+      </div>
+    );
   }
 
   return (

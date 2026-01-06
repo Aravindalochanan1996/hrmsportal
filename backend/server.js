@@ -20,6 +20,7 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hrms')
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/attendance', require('./routes/attendance'));
+app.use('/api/otp', require('./routes/otp'));
 
 // Error handling middleware
 app.use((err, req, res, next) => {

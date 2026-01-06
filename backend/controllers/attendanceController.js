@@ -6,24 +6,30 @@ exports.checkIn = async (req, res) => {
     const userId = req.userId;
     const today = moment().startOf('day');
 
-    // Check if already checked in today
+    // Find today's attendance record
     let attendance = await Attendance.findOne({
       userId,
       date: { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() }
     });
 
-    if (attendance && attendance.checkIn) {
-      return res.status(400).json({ message: 'Already checked in today' });
-    }
-
     if (!attendance) {
+      // Create new attendance record with first shift
       attendance = new Attendance({
         userId,
         date: new Date(),
-        checkIn: new Date()
+        shifts: [{ checkIn: new Date() }]
       });
     } else {
-      attendance.checkIn = new Date();
+      // Check if the last shift has a checkout (to determine if we need a new shift or update existing)
+      const lastShift = attendance.shifts[attendance.shifts.length - 1];
+      
+      if (!lastShift.checkOut) {
+        // Last shift doesn't have checkout, cannot check in again
+        return res.status(400).json({ message: 'Please check out from the current shift before checking in again' });
+      } else {
+        // Last shift is complete, add a new shift
+        attendance.shifts.push({ checkIn: new Date() });
+      }
     }
 
     await attendance.save();
@@ -44,15 +50,21 @@ exports.checkOut = async (req, res) => {
       date: { $gte: today.toDate(), $lt: moment(today).endOf('day').toDate() }
     });
 
-    if (!attendance) {
+    if (!attendance || attendance.shifts.length === 0) {
       return res.status(400).json({ message: 'No check-in record found for today' });
     }
 
-    if (attendance.checkOut) {
-      return res.status(400).json({ message: 'Already checked out today' });
+    const lastShift = attendance.shifts[attendance.shifts.length - 1];
+    
+    if (!lastShift.checkIn) {
+      return res.status(400).json({ message: 'No active check-in found' });
     }
 
-    attendance.checkOut = new Date();
+    if (lastShift.checkOut) {
+      return res.status(400).json({ message: 'Already checked out from the current shift. Please check in for a new shift' });
+    }
+
+    lastShift.checkOut = new Date();
     await attendance.save();
 
     res.json({ message: 'Checked out successfully', attendance });
@@ -75,14 +87,19 @@ exports.getTodayStatus = async (req, res) => {
       return res.json({ 
         message: 'No attendance record for today',
         attendance: null,
-        checkedIn: false
+        checkedIn: false,
+        shifts: []
       });
     }
 
+    const lastShift = attendance.shifts.length > 0 ? attendance.shifts[attendance.shifts.length - 1] : null;
+    const checkedIn = lastShift && lastShift.checkIn && !lastShift.checkOut;
+
     res.json({
       attendance,
-      checkedIn: !!attendance.checkIn,
-      checkedOut: !!attendance.checkOut
+      checkedIn,
+      shifts: attendance.shifts,
+      totalHours: attendance.workingHours
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

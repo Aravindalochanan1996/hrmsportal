@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, getRoleDisplayName } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -40,9 +40,14 @@ const Navbar = () => {
           </Link>
 
           <div className="navbar-user">
-            <span className="user-name">
-              {user?.firstName} {user?.lastName}
-            </span>
+            <div className="user-info">
+              <span className="user-name">
+                {user?.firstName} {user?.lastName}
+              </span>
+              <span className="user-role">
+                {user?.role ? getRoleDisplayName(user.role) : 'User'}
+              </span>
+            </div>
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>

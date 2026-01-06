@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, phone } = req.body;
 
     // Check if user exists
     let user = await User.findOne({ email });
@@ -11,19 +11,22 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create new user
+    // Create new user (default role is 'user', phone is optional but mark as verified if provided)
     user = new User({
       firstName,
       lastName,
       email,
-      password
+      password,
+      phone: phone || '',
+      phoneVerified: phone ? true : false,
+      role: 'user'
     });
 
     await user.save();
 
     // Create JWT token
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'your_jwt_secret_key_here',
       { expiresIn: '7d' }
     );
@@ -35,7 +38,9 @@ exports.register = async (req, res) => {
         id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
-        email: user.email
+        email: user.email,
+        phone: user.phone,
+        role: user.role
       }
     });
   } catch (error) {
@@ -61,7 +66,7 @@ exports.login = async (req, res) => {
 
     // Create JWT token
     const token = jwt.sign(
-      { id: user._id },
+      { id: user._id, role: user.role },
       process.env.JWT_SECRET || 'your_jwt_secret_key_here',
       { expiresIn: '7d' }
     );
@@ -74,6 +79,7 @@ exports.login = async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        role: user.role,
         department: user.department,
         designation: user.designation
       }

@@ -103,8 +103,7 @@ const Attendance = () => {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Check-In</th>
-                <th>Check-Out</th>
+                <th>Shifts</th>
                 <th>Working Hours</th>
                 <th>Status</th>
               </tr>
@@ -113,8 +112,25 @@ const Attendance = () => {
               {attendanceRecords.map((record) => (
                 <tr key={record._id}>
                   <td>{formatDate(record.date)}</td>
-                  <td>{formatTime(record.checkIn)}</td>
-                  <td>{formatTime(record.checkOut)}</td>
+                  <td>
+                    <div className="shifts-column">
+                      {record.shifts && record.shifts.length > 0 ? (
+                        record.shifts.map((shift, index) => (
+                          <div key={index} className="shift-item">
+                            <span className="shift-number">Shift {index + 1}:</span>
+                            <span className="shift-time">
+                              {formatTime(shift.checkIn)} - {shift.checkOut ? formatTime(shift.checkOut) : 'Active'}
+                            </span>
+                            <span className="shift-duration">
+                              {shift.duration ? `(${shift.duration.toFixed(2)}h)` : '(ongoing)'}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <span>N/A</span>
+                      )}
+                    </div>
+                  </td>
                   <td>{record.workingHours ? record.workingHours.toFixed(2) : '0.00'} hrs</td>
                   <td>
                     <span className={`status ${getStatusClass(record.status)}`}>

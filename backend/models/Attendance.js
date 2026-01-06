@@ -1,5 +1,20 @@
 const mongoose = require('mongoose');
 
+const shiftSchema = new mongoose.Schema({
+  checkIn: {
+    type: Date,
+    required: true
+  },
+  checkOut: {
+    type: Date,
+    default: null
+  },
+  duration: {
+    type: Number,
+    default: 0 // in hours
+  }
+}, { _id: true });
+
 const attendanceSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -11,14 +26,7 @@ const attendanceSchema = new mongoose.Schema({
     required: true,
     default: Date.now
   },
-  checkIn: {
-    type: Date,
-    default: null
-  },
-  checkOut: {
-    type: Date,
-    default: null
-  },
+  shifts: [shiftSchema],
   status: {
     type: String,
     enum: ['Present', 'Absent', 'Leave', 'Half-Day'],
@@ -38,13 +46,28 @@ const attendanceSchema = new mongoose.Schema({
   }
 });
 
-// Calculate working hours
+// Calculate total working hours from all shifts
 attendanceSchema.pre('save', function(next) {
-  if (this.checkIn && this.checkOut) {
-    const diff = this.checkOut - this.checkIn;
-    this.workingHours = diff / (1000 * 60 * 60); // Convert to hours
+  let totalHours = 0;
+  
+  this.shifts.forEach(shift => {
+    if (shift.checkIn && shift.checkOut) {
+      const diff = shift.checkOut - shift.checkIn;
+      const hours = diff / (1000 * 60 * 60); // Convert to hours
+      shift.duration = hours;
+      totalHours += hours;
+    }
+  });
+  
+  this.workingHours = parseFloat(totalHours.toFixed(2));
+  
+  // Determine status based on total working hours
+  if (this.shifts.length > 0) {
     this.status = this.workingHours >= 8 ? 'Present' : 'Half-Day';
+  } else {
+    this.status = 'Absent';
   }
+  
   next();
 });
 
