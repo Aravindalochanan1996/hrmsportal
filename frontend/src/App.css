@@ -1,0 +1,42 @@
+import React from 'react';
+import './App.css';
+
+const App = () => {
+  return (
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>Welcome to HRMS Portal</h1>
+        <p style={styles.text}>Loading...</p>
+      </div>
+    </div>
+  );
+};
+
+const styles = {
+  container: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    backgroundColor: '#f5f7fa'
+  },
+  card: {
+    backgroundColor: 'white',
+    padding: '2rem',
+    borderRadius: '0.5rem',
+    boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+    textAlign: 'center',
+    maxWidth: '400px'
+  },
+  title: {
+    fontSize: '1.875rem',
+    fontWeight: 'bold',
+    marginBottom: '1rem',
+    color: '#111827'
+  },
+  text: {
+    color: '#6b7280'
+  }
+};
+
+export default App;
